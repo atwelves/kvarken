@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<!--
+============================================================================================================
+=                                           output files definition                                        =
+=                                            Define your own filesfor ocean dynamics context               =
+=                                         put the variables you want...                                    =
+============================================================================================================
+    -->
+
+    <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1d" min_digits="4">
+
+      <file_group id="1d" output_freq="1d" output_level="10" enabled=".TRUE."> <!-- 1h files -->
+	<file id="file10" name_suffix="_tracer" description="tracer T grid variables" >
+		<field field_ref="Uumaja"         name="Umeå" operation="average"  />
+        </file> 
+      </file_group>
+   </file_definition>

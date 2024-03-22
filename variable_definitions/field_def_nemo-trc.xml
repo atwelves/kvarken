@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!-- $id$ -->
+
+<!--
+============================================================================================================
+=                                  definition of all existing variables                                    =
+=                                            DO NOT CHANGE                                                 =
+============================================================================================================
+-->
+<field_definition level="1" prec="4" operation="average" enabled=".TRUE." default_value="1.e20" > <!-- time step automaticaly defined -->
+
+  <!--
+      ============================================================================================================
+      Tracer model variables
+      ============================================================================================================
+  -->
+
+  <!-- ptrc on T grid -->
+
+  <field_group id="trac_T" grid_ref="grid_T_3D">
+	  <field id="Uumaja"        long_name="Uumajanjoki"        unit="g/kg" />
+	  <field id="Kyrö"        long_name="Kyrönjoki"        unit="g/kg" />
+  </field_group>
+
+</field_definition>
+
