@@ -13,6 +13,7 @@
       <file_group id="1d" output_freq="1d" output_level="10" enabled=".TRUE."> <!-- 1h files -->
 	<file id="file10" name_suffix="_tracer" description="tracer T grid variables" >
 		<field field_ref="Uumaja"         name="Umeå" operation="average"  />
+                <field field_ref="Kyrö"         name="Kyro" operation="average"  />
         </file> 
       </file_group>
    </file_definition>

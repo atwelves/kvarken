@@ -20,13 +20,13 @@
 &namrun        !   parameters of the run
 !-----------------------------------------------------------------------
    nn_no       =       0   !  Assimilation cycle index
-   cn_exp      =  "KVARKEN"  !  experience name
+   cn_exp      =  "KVARK2"  !  experience name
    nn_it000    =       1   !  first time step
-   nn_itend    =    794880   !  last  time step (std 5840)
-   nn_date0    =  20230501   !  date at nit_0000 (format yyyymmdd) used if ln_rstart=F or (ln_rstart=T and nn_rstctl=0 or 1)
+   nn_itend    =    397440   !  last  time step (std 5840)
+   nn_date0    =  20200801   !  date at nit_0000 (format yyyymmdd) used if ln_rstart=F or (ln_rstart=T and nn_rstctl=0 or 1)
    nn_time0    =       0   !  initial time of day in hhmm
    nn_leapy    =       0   !  Leap year calendar (1) or not (0)
-   ln_rstart   = .false.   !  start from rest (F) or from a restart file (T)
+   ln_rstart   = .true.   !  start from rest (F) or from a restart file (T)
       ln_1st_euler = .false.  !  =T force a start with forward time step (ln_rstart=T)
       nn_rstctl    =    0     !  restart control ==> activated only if ln_rstart=T
       !                          !    = 0 nn_date0 read in namelist ; nn_it000 : read in namelist
@@ -37,11 +37,11 @@
       cn_ocerst_out   = "restart"   !  suffix of ocean restart name (output)
       cn_ocerst_outdir = "."        !  directory in which to write output ocean restarts
    nn_istate   =       0   !  output the initial state (1) or not (0)
-   ln_rst_list = .false.   !  output restarts at list of times using nn_stocklist (T) or at set frequency with nn_stock (F)
+   ln_rst_list = .true.   !  output restarts at list of times using nn_stocklist (T) or at set frequency with nn_stock (F)
    nn_stock    =       0   !  used only if ln_rst_list = F: output restart freqeuncy (modulo referenced to 1)
       !                          !    =  0 force to write restart files only at the end of the run
       !                          !    = -1 do not do any restart
-   nn_stocklist = 0,0,0,0,0,0,0,0,0,0 ! List of timesteps when a restart file is to be written
+   nn_stocklist = 133920,263520,397440 ! List of timesteps when a restart file is to be written
    nn_write    =       0   !  used only if key_xios is not defined: output frequency (modulo referenced to nn_it000)
       !                          !    =  0 force to write output files only at the end of the run
       !                          !    = -1 do not do any output file
@@ -122,11 +122,11 @@
 !-----------------------------------------------------------------------
    ln_blk      = .true.    !  Bulk formulation                          (T => fill namsbc_blk )
    ln_apr_dyn  = .true.    !  Patm gradient added in ocean & ice Eqs.   (T => fill namsbc_apr )
-   ln_rnf      = .false.    ! runoffs                                   (T => fill namsbc_rnf)
+   ln_rnf      = .true.    ! runoffs                                   (T => fill namsbc_rnf)
    ln_traqsr   = .true.    ! Light penetration in the ocean            (T => fill namtra_qsr)
-   nn_fsbc     = 2         !  frequency of SBC module call
+   nn_fsbc     = 1         !  frequency of SBC module call
       !                    !  (control sea-ice & iceberg model call)
-   nn_ice      = 2         !  =0 no ice boundary condition
+   nn_ice      = 0         !  =0 no ice boundary condition
       !                    !  =1 use observed ice-cover                 (  => fill namsbc_iif )
       !                    !  =2 or 3 automatically for SI3 or CICE    ("key_si3" or "key_cice")
       !                    !          except in AGRIF zoom where it has to be specified
@@ -134,22 +134,39 @@
 !-----------------------------------------------------------------------
 &namsbc_blk    !   namsbc_blk  generic Bulk formula                     (ln_blk =T)
 !-----------------------------------------------------------------------
-   ln_NCAR     = .true.   ! "NCAR"      algorithm   (Large and Yeager 2008)
-   rn_zqt      = 2.        !  Air temperature & humidity reference height (m)
    cn_dir      = './forcing/'      !  root directory for the bulk data location
+   ln_NCAR      = .false.     ! "NCAR"      algorithm   (Large and Yeager 2008)
+   ln_ECMWF     = .true.    ! "ECMWF"     algorithm   (IFS cycle 45r1)
+      rn_zqt       = 2.      !  Air temperature & humidity reference height (m)
+      rn_zu        = 10.     !  Wind vector reference height (m)
+      nn_iter_algo = 30      !  Number of iterations in bulk param. algo ("stable ABL + weak wind" requires more)
+   !   ln_skin_cs   = .true. !  use the cool-skin parameterization  => use at least nn_iter_algo > 10
+   !   ln_skin_wl   = .true. !  use the warm-layer parameterization => use at least nn_iter_algo > 10
+   !
+   rn_pfac    = 1.          !  multipl. factor for precipitation (total & snow)
+   rn_efac    = 1.          !  multipl. factor for evaporation (0. or 1.)
+   !
+   ln_crt_fbk = .false.     !  Add surface current feedback to the wind stress (Renault et al. 2020, doi: 10.1029/2019MS001715)
+         rn_stau_a = -2.9e-3   !     Alpha from eq. 10: Stau = Alpha * Wnd + Beta
+         rn_stau_b =  8.0e-3   !     Beta
+   !
+   ln_humi_sph = .true.  !  humidity "sn_humi" is specific humidity  [kg/kg]
+   ln_humi_dpt = .false. !  humidity "sn_humi" is dew-point temperature [K]
+   ln_humi_rlh = .false. !  humidity "sn_humi" is relative humidity     [%]
+   ln_tair_pot = .false. !  air temperature read in "sn_tair" is already POTENTIAL TEMPERATURE, NOT ABSOLUTE (ECMWF => ln_tair_pot=.false.)
 
    !___________!_________________________!___________________!___________!_____________!________!___________!______________________________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ !       weights filename               ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                                      ! pairing  !    filename   !
-   sn_wndi     = 'test_force_kvarken'    ,        -12        , 'u_wind'  ,   .false.   , .false., 'yearly'  , ''                                   , ''       , '' 
-   sn_wndj     = 'test_force_kvarken'    ,        -12        , 'v_wind'  ,   .false.   , .false., 'yearly'  , ''                                   , ''       , ''
-   sn_qsr      = 'test_force_kvarken'    ,        -12        , 'sw_dwn'  ,   .false.   , .false., 'yearly'  , ''                                   , ''       , ''
-   sn_qlw      = 'test_force_kvarken'    ,        -12        , 'lw_dwn'  ,   .false.   , .false., 'yearly'  , ''                                   , ''       , ''
-   sn_tair     = 'test_force_kvarken'    ,        -12        , 't_air'   ,   .false.   , .false., 'yearly'  , ''                                   , ''       , ''
-   sn_humi     = 'test_force_kvarken'    ,        -12        , 'h_air'   ,   .false.   , .false., 'yearly'  , ''                                   , ''       , ''
-   sn_prec     = 'test_force_kvarken'    ,        -12        , 'precip'  ,   .false.   , .false., 'yearly'  , ''                                   , ''       , ''
-   sn_snow     = 'test_force_kvarken'    ,        -12        , 'snow'    ,   .false.   , .false., 'yearly'  , ''                                   , ''       , ''
-   sn_slp      = 'test_force_kvarken'    ,        -12        , 'p_air'    ,   .false.   , .false., 'yearly'  , ''                                   , ''       , ''
+   sn_wndi     = 'kvarken_force'    ,        -1        , 'uwind'  ,   .true.   , .false., 'monthly'  , ''                                   , ''       , '' 
+   sn_wndj     = 'kvarken_force'    ,        -1        , 'vwind'  ,   .true.   , .false., 'monthly'  , ''                                   , ''       , ''
+   sn_qsr      = 'kvarken_force'    ,        -1        , 'shortwave'  ,   .true.   , .false., 'monthly'  , ''                                   , ''       , ''
+   sn_qlw      = 'kvarken_force'    ,        -1        , 'longwave'  ,   .true.   , .false., 'monthly'  , ''                                   , ''       , ''
+   sn_tair     = 'kvarken_force'    ,        -1        , 'temperature'   ,   .true.   , .false., 'monthly'  , ''                                   , ''       , ''
+   sn_humi     = 'kvarken_force'    ,        -1        , 'humidity'   ,   .true.   , .false., 'monthly'  , ''                                   , ''       , ''
+   sn_prec     = 'kvarken_force'    ,        -1        , 'precipitation'  ,   .true.   , .false., 'monthly'  , ''                                   , ''       , ''
+   sn_snow     = 'test_force_kvarken'    ,  -12        , 'snow'    ,   .false.   , .false., 'yearly'  , ''                                   , ''       , ''
+   sn_slp      = 'kvarken_force'    ,        -1        , 'pressure'    ,   .true.   , .false., 'monthly'  , ''                                   , ''       , ''
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation                          (ln_traqsr =T)
 !-----------------------------------------------------------------------
@@ -164,22 +181,22 @@
 !-----------------------------------------------------------------------
 &namsbc_rnf    !   runoffs                                              (ln_rnf =T)
 !-----------------------------------------------------------------------
-   ln_rnf_mouth = .false. !  specific treatment at rivers mouths
+   ln_rnf_mouth = .true. !  specific treatment at rivers mouths
    rn_avt_rnf  =   1.e-1  !  value of the additional vertical mixing coef. [m2/s] (ln_rnf_mouth=T)
-   rn_hrnf     =  30.e0   !  depth over which enhanced vertical mixing is used    (ln_rnf_mouth=T)
-   ln_rnf_depth = .true.   !  read in depth information for runoff
-   ln_rnf_sal   = .true.   !  read in salinity information for runoff
-   ln_rnf_tem  = .true.
+   rn_hrnf     =  5.e0   !  depth over which enhanced vertical mixing is used    (ln_rnf_mouth=T)
+   ln_rnf_depth = .false.   !  read in depth information for runoff
+   ln_rnf_sal   = .false.   !  read in salinity information for runoff
+   ln_rnf_tem  = .false.
 
-   cn_dir      = './bc/'      !  root directory for the runoff data location
+   cn_dir      = './forcing/'      !  root directory for the runoff data location
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-   sn_rnf      = 'runoff_gofext_m1' ,   -1   , 'runoff',      .true.  , .false. , 'yearly'  , '' , '' , ''
-   sn_cnf      = 'river_data_ext' ,     -1   , 'socoefr' ,    .true.  , .true. , 'yearly'  , '' , '' , ''
-   sn_s_rnf    = 'SalCelSalty_ext.nc' , -1   , 'RIVERSAL',    .true.  , .true. , 'yearly'  , '' , '' , ''
-   sn_t_rnf    = 'TempCel_ext.nc' ,     -1   , 'RIVERTEMP',   .true.  , .true. , 'yearly'  , '' , '' , ''
-   sn_dep_rnf  = 'DepthMod_ext.nc' ,    -1   , 'RIVERDEPTH' , .false. , .true. , 'yearly'  , '' , '' , ''
+   sn_rnf      = 'test_river_kvarken' ,   -12   , 'rnf',      .false.  , .false. , 'yearly'  , '' , '' , ''
+   sn_cnf      = 'test_river_kvarken' ,     -12   , 'kyro',    .false.  , .false. , 'yearly'  , '' , '' , ''
+   !sn_s_rnf    = 'umea_mask.nc' , -12   , 'RIVERSAL',    .true.  , .true. , 'yearly'  , '' , '' , ''
+   !sn_t_rnf    = 'kyro_mask.nc' ,     -12   , 'init_temp',   .false.  , .false. , 'yearly'  , '' , '' , ''
+   !sn_dep_rnf  = 'DepthMod_ext.nc' ,    -1   , 'RIVERDEPTH' , .false. , .true. , 'yearly'  , '' , '' , ''
 /
 !-----------------------------------------------------------------------
 &namsbc_apr    !   Atmospheric pressure used as ocean forcing           (ln_apr_dyn =T)
@@ -188,7 +205,7 @@
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-   sn_apr      = 'test_force_kvarken'    ,          -12      , 'p_air'   ,   .false.   , .false., 'yearly'  ,  ''              , ''       , ''
+   sn_apr      = 'kvarken_force'    ,          -1      , 'pressure'   ,   .true.   , .false., 'monthly'  ,  ''              , ''       , ''
 /
 !!======================================================================
 !!               ***  Lateral boundary condition  ***                 !!
@@ -211,33 +228,86 @@
 &nambdy        !  unstructured open boundaries                          (default: OFF)
 !-----------------------------------------------------------------------
    ln_bdy         = .true.   !  Use unstructured open boundaries
-   nb_bdy         = 0         !  number of open boundary sets
-   ln_coords_file = .false.    !  =T : read bdy coordinates from file
+   nb_bdy         = 2         !  number of open boundary sets
+   ln_coords_file = .false.,.false.    !  =T : read bdy coordinates from file
       cn_coords_file = 'coordinates.bdy.nc'  !  bdy coordinates files
    ln_mask_file   = .false.   !  =T : read mask from file
       cn_mask_file = ''        !  name of mask file (if ln_mask_file=.TRUE.)
-   cn_dyn2d    = 'flather'       !
-   nn_dyn2d_dta   =  0        !  = 0, bdy data are equal to the initial state
+   cn_dyn2d    = 'flather','flather'       !
+   nn_dyn2d_dta   =  0,0        !  = 0, bdy data are equal to the initial state
       !                       !  = 1, bdy data are read in 'bdydata   .nc' files
       !                       !  = 2, use tidal harmonic forcing data from files
       !                       !  = 3, use external data AND tidal harmonic forcing
-   cn_dyn3d      =  'none'    !
-   nn_dyn3d_dta  =  0         !  = 0, bdy data are equal to the initial state
+   cn_dyn3d      =  'none','none'    !
+   nn_dyn3d_dta  =  0,0         !  = 0, bdy data are equal to the initial state
    !                          !  = 1, bdy data are read in 'bdydata   .nc' files
-   cn_tra        =  'frs'    !
-   nn_tra_dta    =  0         !  = 0, bdy data are equal to the initial state
+   cn_tra        =  'frs','frs'    !
+   nn_tra_dta    =  1,1         !  = 0, bdy data are equal to the initial state
    !                          !  = 1, bdy data are read in 'bdydata   .nc' files
-   cn_ice        =  'none'    !
-   nn_ice_dta    =  0         !  = 0, bdy data are equal to the initial state
+   cn_ice        =  'none','none'    !
+   nn_ice_dta    =  0,0         !  = 0, bdy data are equal to the initial state
    !                          !  = 1, bdy data are read in 'bdydata   .nc' files
    !
-   ln_tra_dmp    =.true.     !  open boudaries conditions for tracers
-   ln_dyn3d_dmp  =.false.     !  open boundary condition for baroclinic velocities
-   rn_time_dmp   =  1.        !  Damping time scale in days
-   rn_time_dmp_out = 1.       !  Outflow damping time scale
-   nn_rimwidth   = 10         !  width of the relaxation zone
+   ln_tra_dmp    =.false.,false.     !  open boudaries conditions for tracers
+   ln_dyn3d_dmp  =.false.,false.     !  open boundary condition for baroclinic velocities
+   rn_time_dmp   =  1.,1.        !  Damping time scale in days
+   rn_time_dmp_out = 1.,1.       !  Outflow damping time scale
+   nn_rimwidth   = 1.,1.         !  width of the relaxation zone
    ln_vol        = .false.    !  total volume correction (see nn_volctl parameter)
    nn_volctl     =  1         !  = 0, the total water flux across open boundaries is zero
+/
+
+&nambdy_index  !  structured open boundaries definition     ("key_bdy")
+!-----------------------------------------------------------------------
+    ctypebdy ='N'         ! Open boundary type (W,E,S or N)
+    nbdyind  = -1            ! indice of velocity row or column
+                                    ! if ==-1, set obc at the domain boundary
+                                    !        , discard start and end indices
+    nbdybeg  =  0        ! indice of segment start
+    nbdyend  = 400       ! indice of segment end
+/
+!-----------------------------------------------------------------------
+&nambdy_index  !  structured open boundaries definition     ("key_bdy")
+!-----------------------------------------------------------------------
+    ctypebdy ='S'          ! Open boundary type (W,E,S or N)
+    nbdyind  = -1      ! indice of velocity row or column
+                                    ! if ==-1, set obc at the domain boundary
+                                    !        , discard start and end indices
+    nbdybeg  =  0      ! indice of segment start
+    nbdyend  =  400      ! indice of segment end
+/
+!-----------------------------------------------------------------------
+&nambdy_dta    !  open boundaries - external data                       (see nam_bdy)
+!-----------------------------------------------------------------------
+   ln_zinterp  = .false.      !  T if a vertical interpolation is required. Variables gdep[tuv] and e3[tuv] must exist in the file
+   !                          !  automatically defined to T if the number of vertical levels in bdy dta /= jpk
+   ln_full_vel = .false.      !  T if [uv]3d are "full" velocities and not only its baroclinic components
+   !                          !  in this case, baroclinic and barotropic velocities will be recomputed -> [uv]2d not needed
+   !
+   cn_dir      = 'forcing/'    !  root directory for the BDY data location
+   !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
+   !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
+   !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
+   bn_tem      = 'kvarken_north_ts'        ,         -1.       , 'temp',    .true.   , .false.,  'monthly'  ,    ''            ,   ''     ,     ''
+   bn_sal      = 'kvarken_north_ts'        ,         -1.       , 'salt',    .true.   , .false.,  'monthly'  ,    ''            ,   ''     ,     ''
+
+/
+!-----------------------------------------------------------------------
+&nambdy_dta    !  open boundaries - external data                       (see nam_bdy)
+!-----------------------------------------------------------------------
+   ln_zinterp  = .false.     !  T if a vertical interpolation is required. Variables gdep[tuv] and e3[tuv] must exist in the file
+   !                          !  automatically defined to T if the number of vertical levels in bdy dta /= jpk
+   ln_full_vel = .true.      !  T if [uv]3d are "full" velocities and not only its baroclinic components
+   !                          !  in this case, baroclinic and barotropic velocities will be recomputed -> [uv]2d not needed
+   !
+   cn_dir      = 'forcing/'    !  root directory for the BDY data location
+   !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
+   !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
+   !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
+   bn_tem      = 'kvarken_south_ts'        ,         -1.       , 'temp',    .true.   , .false.,  'monthly'  ,    ''            ,   ''     ,     ''
+   bn_sal      = 'kvarken_south_ts'        ,         -1.       , 'salt',    .true.   , .false.,  'monthly'  ,    ''            ,   ''     ,     ''
+   bn_u3d     = 'test_force_kvarken'    ,  -12        , 'snow'    ,   .false.   , .false., 'yearly'  , ''                                   , ''       , '' 
+   bn_v3d      = 'kvarken_south_ts'        ,         -1.       , 'vvel',    .true.   , .false.,  'monthly'  ,    ''            ,   ''     ,     ''
 /
 !!======================================================================
 !!                ***  Top/Bottom boundary condition  ***             !!

@@ -10,11 +10,12 @@
    
     <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1d" min_digits="4">
     
-      <file_group id="1h" output_freq="1h"  output_level="10" enabled=".TRUE.">  <!-- hourly instant files -->   
+      <file_group id="1d" output_freq="1d"  output_level="10" enabled=".TRUE.">  <!-- hourly instant files -->   
         <file id="file1" name_suffix="_surf_T" description="Sea surface variables" >
-	   <field field_ref="ssh"          name="zos"  operation="instant" />
-	   <field field_ref="sst"          name="tos"  operation="instant" />
-	   <field field_ref="sss"          name="sos"  operation="instant" />
+		<field field_ref="qsr_oce"      name="sw_down"  operation="instant" />
+		<field field_ref="qlw_oce"      name="lw_down"  operation="instant" />
+		<field field_ref="qsb_oce"      name="sen_down" operation="instant" />
+		<field field_ref="qla_oce"      name="lat_down" operation="instant" />
         </file>
       </file_group>
 
